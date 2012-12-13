@@ -1,0 +1,229 @@
+//
+//  ApplicationDelegate.m
+//  PushMeBaby
+//
+//  Created by Stefan Hafeneger on 07.04.09.
+//  Copyright 2009 __MyCompanyName__. All rights reserved.
+//
+
+#import "ApplicationDelegate.h"
+
+@interface ApplicationDelegate ()
+#pragma mark Properties
+@property(nonatomic, retain) NSString *deviceToken, *payload, *certificate;
+#pragma mark Private
+- (void)connect;
+- (void)disconnect;
+@end
+
+@implementation ApplicationDelegate
+
+#pragma mark Allocation
+
+- (id)init {
+	self = [super init];
+	if(self != nil) {
+        //iphone4s 测试OK  d2beee1bb0acad5bf1f88bdb98a7fd8320ffe5a07d720d31d76336f9acacc5ac  d2beee1bb0acad5bf1f88bdb98a7fd8320ffe5a07d720d31d76336f9acacc5ac
+		//self.deviceToken = @"d2beee1b b0acad5b f1f88bdb 98a7fd83 20ffe5a0 7d720d31 d76336f9 acacc5ac";
+        // self.deviceToken =  @"a9c82fa9 5bb09196 fc8c9821 2b89f845 6fe40a4f b6df1200 b3a2a749 c0aab3d8";
+
+        //山生产环境
+        self.deviceToken =   @"3456715e ef8792a3 a0241be6 8c4deafe 75d61327 c116693f 1cdff65d 7c489b81";
+                               //2c7f3d82 91e02b8c 1cc9b8e9 82300971 90e360eb 89c6e9db b6e719b0 f6fc21cd
+        //润和机器
+        //self.deviceToken =   @"2c7f3d82 91e02b8c 1cc9b8e9 82300971 90e360eb 89c6e9db b6e719b0 f6fc21cd";
+
+        
+		self.payload = @"{\"aps\":{\"alert\":\"This is some fancy message.\",\"badge\":1}}";
+		self.certificate = [[NSBundle mainBundle] pathForResource:@"aps_production_cn.weiba.mainclient" ofType:@"cer"];
+	}
+	return self;
+}
+
+- (void)dealloc {
+	
+	// Release objects.
+	self.deviceToken = nil;
+	self.payload = nil;
+	self.certificate = nil;
+	
+	// Call super.
+	[super dealloc];
+	
+}
+
+
+#pragma mark Properties
+
+@synthesize deviceToken = _deviceToken;
+@synthesize payload = _payload;
+@synthesize certificate = _certificate;
+
+#pragma mark Inherent
+
+- (void)applicationDidFinishLaunching:(NSNotification *)notification {
+	[self connect];
+}
+
+- (void)applicationWillTerminate:(NSNotification *)notification {
+	[self disconnect];
+}
+
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)application {
+	return YES;
+}
+
+#pragma mark Private
+
+- (void)connect {
+	
+	if(self.certificate == nil) {
+		return;
+	}
+	
+	// Define result variable.
+	OSStatus result;
+	
+	// Establish connection to server.
+	PeerSpec peer;
+    //测试环境通过
+    
+	//result = MakeServerConnection("gateway.sandbox.push.apple.com", 2195, &socket, &peer);// NSLog(@"MakeServerConnection(): %d", result);
+	
+    
+    //正式环境
+    result = MakeServerConnection("gateway.push.apple.com", 2195, &socket, &peer);// NSLog(@"MakeServerConnection(): %d", result);
+
+    
+    
+	// Create new SSL context.
+	result = SSLNewContext(false, &context);// NSLog(@"SSLNewContext(): %d", result);
+	
+	// Set callback functions for SSL context.
+	result = SSLSetIOFuncs(context, SocketRead, SocketWrite);// NSLog(@"SSLSetIOFuncs(): %d", result);
+	
+	// Set SSL context connection.
+	result = SSLSetConnection(context, socket);// NSLog(@"SSLSetConnection(): %d", result);
+	
+    //测试环境通过
+	// Set server domain name.
+    
+	//result = SSLSetPeerDomainName(context, "gateway.sandbox.push.apple.com", 30);// NSLog(@"SSLSetPeerDomainName(): %d", result);
+	
+    //生产环境改用22端口
+    result = SSLSetPeerDomainName(context, "gateway.push.apple.com", 22);// NSLog(@"SSLSetPeerDomainName(): %d", result);
+    
+	// Open keychain.
+	result = SecKeychainCopyDefault(&keychain);// NSLog(@"SecKeychainOpen(): %d", result);
+	
+	// Create certificate.
+	NSData *certificateData = [NSData dataWithContentsOfFile:self.certificate];
+    
+    certificate = SecCertificateCreateWithData(kCFAllocatorDefault, (CFDataRef)certificateData);
+    if (certificate == NULL)
+        NSLog (@"SecCertificateCreateWithData failled");
+    
+	// Create identity.
+	result = SecIdentityCreateWithCertificate(keychain, certificate, &identity);// NSLog(@"SecIdentityCreateWithCertificate(): %d", result);
+	
+	// Set client certificate.
+	CFArrayRef certificates = CFArrayCreate(NULL, (const void **)&identity, 1, NULL);
+	result = SSLSetCertificate(context, certificates);// NSLog(@"SSLSetCertificate(): %d", result);
+	CFRelease(certificates);
+	
+	// Perform SSL handshake.
+	do {
+		result = SSLHandshake(context);// NSLog(@"SSLHandshake(): %d", result);
+	} while(result == errSSLWouldBlock);
+	
+}
+
+- (void)disconnect {
+	
+	if(self.certificate == nil) {
+		return;
+	}
+	
+	// Define result variable.
+	OSStatus result;
+	
+	// Close SSL session.
+	result = SSLClose(context);// NSLog(@"SSLClose(): %d", result);
+	
+	// Release identity.
+    if (identity != NULL)
+        CFRelease(identity);
+	
+	// Release certificate.
+    if (certificate != NULL)
+        CFRelease(certificate);
+	
+	// Release keychain.
+    if (keychain != NULL)
+        CFRelease(keychain);
+	
+	// Close connection to server.
+	close((int)socket);
+	
+	// Delete SSL context.
+	result = SSLDisposeContext(context);// NSLog(@"SSLDisposeContext(): %d", result);
+	
+}
+
+#pragma mark IBAction
+
+- (IBAction)push:(id)sender {
+	
+	if(self.certificate == nil) {
+        NSLog(@"you need the APNS Certificate for the app to work");
+        exit(1);
+	}
+	
+	// Validate input.
+	if(self.deviceToken == nil || self.payload == nil) {
+		return;
+	}
+	
+	// Convert string into device token data.
+	NSMutableData *deviceToken = [NSMutableData data];
+	unsigned value;
+	NSScanner *scanner = [NSScanner scannerWithString:self.deviceToken];
+	while(![scanner isAtEnd]) {
+		[scanner scanHexInt:&value];
+		value = htonl(value);
+		[deviceToken appendBytes:&value length:sizeof(value)];
+	}
+	
+	// Create C input variables.
+	char *deviceTokenBinary = (char *)[deviceToken bytes];
+	char *payloadBinary = (char *)[self.payload UTF8String];
+	size_t payloadLength = strlen(payloadBinary);
+	
+	// Define some variables.
+	uint8_t command = 0;
+	char message[293];
+	char *pointer = message;
+	uint16_t networkTokenLength = htons(32);
+	uint16_t networkPayloadLength = htons(payloadLength);
+	
+	// Compose message.
+	memcpy(pointer, &command, sizeof(uint8_t));
+	pointer += sizeof(uint8_t);
+	memcpy(pointer, &networkTokenLength, sizeof(uint16_t));
+	pointer += sizeof(uint16_t);
+	memcpy(pointer, deviceTokenBinary, 32);
+	pointer += 32;
+	memcpy(pointer, &networkPayloadLength, sizeof(uint16_t));
+	pointer += sizeof(uint16_t);
+	memcpy(pointer, payloadBinary, payloadLength);
+	pointer += payloadLength;
+	
+	// Send message over SSL.
+	size_t processed = 0;
+	OSStatus result = SSLWrite(context, &message, (pointer - message), &processed);
+    if (result != noErr)
+        NSLog(@"SSLWrite(): %d %zd", result, processed);
+	
+}
+
+@end
