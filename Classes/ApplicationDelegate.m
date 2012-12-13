@@ -23,15 +23,7 @@
 - (id)init {
 	self = [super init];
 	if(self != nil) {
-        //iphone4s 测试OK  d2beee1bb0acad5bf1f88bdb98a7fd8320ffe5a07d720d31d76336f9acacc5ac  d2beee1bb0acad5bf1f88bdb98a7fd8320ffe5a07d720d31d76336f9acacc5ac
-		//self.deviceToken = @"d2beee1b b0acad5b f1f88bdb 98a7fd83 20ffe5a0 7d720d31 d76336f9 acacc5ac";
-        // self.deviceToken =  @"a9c82fa9 5bb09196 fc8c9821 2b89f845 6fe40a4f b6df1200 b3a2a749 c0aab3d8";
 
-        //山生产环境
-        self.deviceToken =   @"3456715e ef8792a3 a0241be6 8c4deafe 75d61327 c116693f 1cdff65d 7c489b81";
-                               //2c7f3d82 91e02b8c 1cc9b8e9 82300971 90e360eb 89c6e9db b6e719b0 f6fc21cd
-        //润和机器
-        //self.deviceToken =   @"2c7f3d82 91e02b8c 1cc9b8e9 82300971 90e360eb 89c6e9db b6e719b0 f6fc21cd";
 
         
 		self.payload = @"{\"aps\":{\"alert\":\"This is some fancy message.\",\"badge\":1}}";
