@@ -25,7 +25,7 @@
 	if(self != nil) {
 
 
-        
+                self.deviceToken=@"your device token";
 		self.payload = @"{\"aps\":{\"alert\":\"This is some fancy message.\",\"badge\":1}}";
 		self.certificate = [[NSBundle mainBundle] pathForResource:@"aps_production_cn.weiba.mainclient" ofType:@"cer"];
 	}
