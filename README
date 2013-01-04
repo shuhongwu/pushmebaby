@@ -1,1 +1,1 @@
-You can use this app during iOS Push Notification development to push notifications on your device from your Mac.
+添加你自己的device token,记得测试环境与正式环境的区别，相对应的，有测试环境与正式环境的证书，mac只要cer文件就可以,给别的机器需要p12文件
