@@ -1,1 +1,5 @@
-添加你自己的device token,记得测试环境与正式环境的区别，相对应的，有测试环境与正式环境的证书，mac只要cer文件就可以,给别的机器需要p12文件
+1,添加你自己的device token,记得测试环境与正式环境的区别，相对应的，有测试环境与正式环境的证书，mac只要cer文件就可以,给别的机器需要p12文件
+
+2,对于ios穿墙，请参看这篇文章http://ifan.178.com/viewthread.php?fid=561&tid=1387056
+  可是如果照着操作不成功，我怀疑是文件出了问题，所以就把手机里面的:/var/mobile/goagent-local 目录下的文件用iosjailbreakGFE.zip
+  里面的文件代替。果然，访问任何境外网站无障碍~~~
